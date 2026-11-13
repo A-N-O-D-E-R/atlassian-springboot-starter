@@ -5,16 +5,20 @@ HTTP interfaces (`@HttpExchange`) over `RestClient`, with records for the JSON t
 
 | Module | Content |
 |---|---|
-| `atlassian-jira` | `JiraClient`: issues, JQL search, comments, transitions (REST API v3) |
+| `atlassian-jira` | `JiraClient`: issues (create, bulk create, edit), issue types, JQL search, comments, transitions, links (REST API v3) |
 | `atlassian-confluence` | `ConfluenceClient`: spaces, pages, child pages, footer comments (REST API v2) |
 | `atlassian-autoconfigure` | Beans from `anode.atlassian.*` |
-| `jira-spring-boot-starter`, `confluence-spring-boot-starter` | Client + auto-configuration |
 | `atlassian-dependencies` | BOM |
 
 ```xml
 <dependency>
     <groupId>io.github.a-n-o-d-e-r</groupId>
-    <artifactId>jira-spring-boot-starter</artifactId>
+    <artifactId>atlassian-autoconfigure</artifactId>
+    <version>0.1.0</version>
+</dependency>
+<dependency>  <!-- and/or atlassian-confluence -->
+    <groupId>io.github.a-n-o-d-e-r</groupId>
+    <artifactId>atlassian-jira</artifactId>
     <version>0.1.0</version>
 </dependency>
 ```
@@ -28,6 +32,8 @@ Jira and Confluence share the site and the account. Nothing is configured until 
 |---|---|---|
 | `base-url` | — | `https://your-domain.atlassian.net` |
 | `email`, `api-token` | — | Account and its [API token](https://id.atlassian.com/manage-profile/security/api-tokens) |
+| `cloud-id` | — | Site's cloud id (`<site>/_edge/tenant_info`), for scoped API tokens: calls then go through `gateway-url/ex/jira\|confluence/<cloud-id>` |
+| `gateway-url` | `https://api.atlassian.com` | Atlassian API gateway |
 | `jira.enabled`, `confluence.enabled` | `true` | Switch a client off |
 
 Each client bean can be replaced by declaring your own. Clients use the application's `RestClient.Builder` when

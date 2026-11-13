@@ -50,16 +50,6 @@
                 <artifactId>atlassian-autoconfigure</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.github.a-n-o-d-e-r</groupId>
-                <artifactId>jira-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.a-n-o-d-e-r</groupId>
-                <artifactId>confluence-spring-boot-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

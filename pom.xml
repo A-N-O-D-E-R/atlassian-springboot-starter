@@ -44,8 +44,6 @@
         <module>atlassian-jira</module>
         <module>atlassian-confluence</module>
         <module>atlassian-autoconfigure</module>
-        <module>starters/jira-spring-boot-starter</module>
-        <module>starters/confluence-spring-boot-starter</module>
     </modules>
 
     <properties>

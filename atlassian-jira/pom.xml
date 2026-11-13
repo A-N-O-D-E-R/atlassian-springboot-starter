@@ -20,7 +20,13 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <!-- the application brings the JSON mapper; tests use Spring Boot 4's -->
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

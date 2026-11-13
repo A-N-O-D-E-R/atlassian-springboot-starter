@@ -6,15 +6,22 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.anode.atlassian.jira.JiraClient.BulkCreated;
+import com.anode.atlassian.jira.JiraClient.BulkIssues;
+import com.anode.atlassian.jira.JiraClient.IssueFields;
+import com.anode.atlassian.jira.JiraClient.IssueLink;
 import com.anode.atlassian.jira.JiraClient.Search;
+import java.util.Map;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.support.RestClientAdapter;
 import org.springframework.web.service.invoker.HttpServiceProxyFactory;
@@ -90,5 +97,46 @@ class JiraClientTest {
         assertThatThrownBy(() -> jira.transition("ALE-42", "Done"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Done");
+    }
+
+    @Test
+    void listsTheIssueTypesAProjectCanCreate() {
+        server.expect(requestTo(API + "/issue/createmeta/PD/issuetypes?startAt=0&maxResults=50"))
+                .andRespond(withSuccess("{\"issueTypes\":[{\"id\":\"10000\",\"name\":\"Epic\",\"hierarchyLevel\":1}],"
+                        + "\"total\":1,\"isLast\":true}", MediaType.APPLICATION_JSON));
+
+        var types = jira.getCreateIssueTypes("PD", 0, 50);
+
+        assertThat(types.issueTypes()).singleElement().satisfies(t -> assertThat(t.hierarchyLevel()).isEqualTo(1));
+        assertThat(types.isLast()).isTrue();
+    }
+
+    @Test
+    void aFailedBulkCreateKeepsItsErrorsInTheBody() {
+        server.expect(requestTo(API + "/issue/bulk"))
+                .andExpect(content().json("{\"issueUpdates\":[{\"fields\":{\"summary\":\"S\"}}]}", true))
+                .andRespond(withBadRequest().contentType(MediaType.APPLICATION_JSON).body("{\"issues\":[],\"errors\":"
+                        + "[{\"failedElementNumber\":0,\"elementErrors\":{\"errors\":{\"summary\":\"too long\"}}}]}"));
+
+        var failure = org.assertj.core.api.Assertions.catchThrowableOfType(HttpClientErrorException.class,
+                () -> jira.createIssues(new BulkIssues(List.of(new IssueFields(Map.of("summary", "S"))))));
+
+        var body = failure.getResponseBodyAs(BulkCreated.class);
+        assertThat(body.errors()).singleElement().satisfies(e -> {
+            assertThat(e.failedElementNumber()).isZero();
+            assertThat(e.elementErrors().errors()).containsEntry("summary", "too long");
+        });
+    }
+
+    @Test
+    void theBlockingIssueIsTheInwardOne() {
+        server.expect(requestTo(API + "/issueLink"))
+                .andExpect(content().json("{\"type\":{\"name\":\"Blocks\"},\"inwardIssue\":{\"key\":\"PD-1\"},"
+                        + "\"outwardIssue\":{\"key\":\"PD-2\"}}", true))
+                .andRespond(withSuccess());
+
+        jira.linkIssues(IssueLink.blocks("PD-1", "PD-2"));
+
+        server.verify();
     }
 }

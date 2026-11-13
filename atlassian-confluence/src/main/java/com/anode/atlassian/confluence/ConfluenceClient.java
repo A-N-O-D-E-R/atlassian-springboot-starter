@@ -68,7 +68,7 @@ public interface ConfluenceClient {
     record Page(String id, String status, String title, String spaceId, String parentId, Version version,
             Map<String, Body> body, @JsonProperty("_links") Links links) {}
 
-    record Version(int number, String message) {}
+    record Version(Integer number, String message) {}
 
     /** {@code value} is storage-format XHTML, or an ADF document serialized as JSON. */
     record Body(String representation, String value) {

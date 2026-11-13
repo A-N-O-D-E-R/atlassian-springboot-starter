@@ -9,16 +9,26 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param baseUrl site URL, e.g. https://your-domain.atlassian.net
  * @param email account the API token belongs to
  * @param apiToken API token of that account
+ * @param cloudId site's cloud id, for scoped API tokens: they are only accepted through the gateway
+ *     ({@code <gateway-url>/ex/jira|confluence/<cloud-id>}), unscoped ones call the site directly
+ * @param gatewayUrl Atlassian API gateway
  * @param jira Jira client
  * @param confluence Confluence client
  */
 @ConfigurationProperties(AtlassianProperties.PREFIX)
-public record AtlassianProperties(String baseUrl, String email, String apiToken, @DefaultValue Product jira, @DefaultValue Product confluence) {
+public record AtlassianProperties(String baseUrl, String email, String apiToken, String cloudId,
+                                  @DefaultValue("https://api.atlassian.com") String gatewayUrl, @DefaultValue Product jira, @DefaultValue Product confluence) {
 
     public static final String PREFIX = "anode.atlassian";
 
     /** @param enabled whether its client is configured */
     public record Product(@DefaultValue("true") boolean enabled) {}
+
+    /** Where {@code product} ({@code jira}, {@code confluence}) is called: the site, or the gateway with a cloud id. */
+    String url(String product) {
+        String url = cloudId == null || cloudId.isBlank() ? baseUrl : gatewayUrl + "/ex/" + product + "/" + cloudId.strip();
+        return url.replaceAll("/+$", "");
+    }
 
     /** Never shows the token. */
     @Override

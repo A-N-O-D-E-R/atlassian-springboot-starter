@@ -51,4 +51,22 @@ class AtlassianAutoConfigurationTest {
                 .run(context -> assertThat(context.getBean(JiraClient.class).myself().accountId()).isEqualTo("a1"));
         server.verify();
     }
+
+    @Test
+    void scopedTokensGoThroughTheGateway() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo("https://api.atlassian.com/ex/jira/c-1/rest/api/3/myself"))
+                .andRespond(withSuccess("{\"accountId\":\"a1\"}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://api.atlassian.com/ex/confluence/c-1/wiki/api/v2/spaces"))
+                .andRespond(withSuccess("{\"results\":[]}", MediaType.APPLICATION_JSON));
+
+        runner.withPropertyValues(SITE).withPropertyValues("anode.atlassian.cloud-id=c-1")
+                .withBean(RestClient.Builder.class, () -> builder)
+                .run(context -> {
+                    context.getBean(JiraClient.class).myself();
+                    context.getBean(ConfluenceClient.class).getSpaces(null, null, null);
+                });
+        server.verify();
+    }
 }

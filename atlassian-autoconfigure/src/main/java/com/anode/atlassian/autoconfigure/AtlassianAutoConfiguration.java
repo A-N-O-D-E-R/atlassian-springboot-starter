@@ -27,9 +27,9 @@ import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 @EnableConfigurationProperties(AtlassianProperties.class)
 public class AtlassianAutoConfiguration {
 
-    static <T> T client(Class<T> type, AtlassianProperties properties, ObjectProvider<RestClient.Builder> builders) {
+    static <T> T client(Class<T> type, String product, AtlassianProperties properties, ObjectProvider<RestClient.Builder> builders) {
         RestClient rest = builders.getIfAvailable(RestClient::builder).clone()
-                .baseUrl(properties.baseUrl().replaceAll("/+$", ""))
+                .baseUrl(properties.url(product))
                 .defaultHeaders(headers -> headers.setBasicAuth(properties.email(), properties.apiToken()))
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .build();
@@ -43,7 +43,7 @@ public class AtlassianAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         JiraClient jiraClient(AtlassianProperties properties, ObjectProvider<RestClient.Builder> builders) {
-            return client(JiraClient.class, properties, builders);
+            return client(JiraClient.class, "jira", properties, builders);
         }
     }
 
@@ -54,7 +54,7 @@ public class AtlassianAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         ConfluenceClient confluenceClient(AtlassianProperties properties, ObjectProvider<RestClient.Builder> builders) {
-            return client(ConfluenceClient.class, properties, builders);
+            return client(ConfluenceClient.class, "confluence", properties, builders);
         }
     }
 }
